@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import {
   MicroMarket,
