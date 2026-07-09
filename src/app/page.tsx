@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { MICRO_MARKETS, MicroMarket } from "@/data/mumbai";
 import Sidebar from "@/components/Sidebar";
 import {
@@ -11,6 +12,7 @@ import {
   Shield,
   Wind,
   Navigation,
+  ShieldCheck,
 } from "lucide-react";
 
 // Leaflet must be loaded client-side only (no SSR)
@@ -122,6 +124,17 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/rera"
+              className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition"
+              style={{
+                background: "rgba(0,230,118,0.12)",
+                border: "1px solid rgba(0,230,118,0.4)",
+                color: "#00e676",
+              }}
+            >
+              <ShieldCheck size={14} /> Builder Track Record
+            </Link>
             <div className="relative">
               <Search
                 size={14}
