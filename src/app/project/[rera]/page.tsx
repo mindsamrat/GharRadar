@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   MapPin,
@@ -31,10 +30,15 @@ import { StatusBadge } from "@/components/ui/badge";
 import { ProjectCard } from "@/components/ProjectCard";
 import { CopyButton } from "@/components/CopyButton";
 import { formatINR } from "@/lib/utils";
+import { LiveProjectLoader } from "@/components/project/LiveProjectLoader";
 
+// Pre-render the curated projects; resolve any other registration number live.
 export function generateStaticParams() {
   return PROJECTS.map((p) => ({ rera: p.rera }));
 }
+
+// Allow registration numbers outside generateStaticParams to render on demand.
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,
@@ -43,7 +47,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { rera } = await params;
   const p = projectByRera(rera);
-  if (!p) return { title: "Project not found" };
+  if (!p) {
+    return {
+      title: `MahaRERA ${rera} — Live project lookup`,
+      description: `Live MahaRERA registry details for registration ${rera}.`,
+    };
+  }
   return {
     title: `${p.name} — ${p.builder} · MahaRERA ${p.rera}`,
     description: `${p.name} by ${p.builder} in ${p.locality}, ${p.city}. Status: ${p.status}. ${p.configs.join(", ")}. MahaRERA registration ${p.rera}.`,
@@ -64,7 +73,12 @@ export default async function ProjectPage({
 }) {
   const { rera } = await params;
   const p = projectByRera(rera);
-  if (!p) notFound();
+
+  // Unknown to the curated set → resolve live from MahaRERA (client-side, via
+  // the dynamic /api/rera route) so this page stays static for curated slugs.
+  if (!p) {
+    return <LiveProjectLoader rera={rera} />;
+  }
 
   const builder = builderBySlug(p.builderSlug);
   const related = projectsByBuilder(p.builderSlug)

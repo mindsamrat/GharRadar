@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Search, SlidersHorizontal, HardHat, X } from "lucide-react";
+import { Search, SlidersHorizontal, HardHat, X, Radio } from "lucide-react";
 import {
   PROJECTS,
   BUILDERS,
@@ -12,6 +12,7 @@ import {
   type ProjectStatus,
   type City,
 } from "@/data/rera";
+import { looksLikeReraQuery, normalizeRera } from "@/lib/maharera/rera-number";
 import { ProjectCard } from "@/components/ProjectCard";
 import { cn } from "@/lib/utils";
 
@@ -214,19 +215,36 @@ export function SearchExplorer() {
 
       {projects.length === 0 ? (
         <div className="rounded-2xl border border-white/[0.08] bg-[var(--bg-card)]/40 py-16 text-center">
-          <p className="text-[var(--fg-muted)]">
-            No projects match your filters.
-          </p>
-          <button
-            onClick={() => {
-              setQ("");
-              setCity("All");
-              setStatus("All");
-            }}
-            className="mt-3 text-sm font-semibold text-[var(--accent)]"
-          >
-            Reset filters
-          </button>
+          {looksLikeReraQuery(q) ? (
+            <>
+              <p className="text-[var(--fg-muted)]">
+                <span className="font-mono text-white">{normalizeRera(q)}</span>{" "}
+                isn’t in the curated set — but you can pull it live from MahaRERA.
+              </p>
+              <Link
+                href={`/project/${normalizeRera(q)}`}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--green)]/40 bg-[var(--green)]/10 px-4 py-2.5 text-sm font-semibold text-[var(--green)] hover:bg-[var(--green)]/20"
+              >
+                <Radio size={15} /> Look up on MahaRERA
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-[var(--fg-muted)]">
+                No projects match your filters.
+              </p>
+              <button
+                onClick={() => {
+                  setQ("");
+                  setCity("All");
+                  setStatus("All");
+                }}
+                className="mt-3 text-sm font-semibold text-[var(--accent)]"
+              >
+                Reset filters
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

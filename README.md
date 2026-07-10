@@ -20,6 +20,37 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Live MahaRERA lookup
+
+Any MahaRERA registration number that isn't in the bundled curated set is
+resolved **live** from the public MahaRERA registry instead of 404-ing.
+
+- **API:** `GET /api/rera/:rera` → JSON `{ rera, provenance, live?, note, ... }`.
+  `provenance` is one of `live` (freshly fetched), `cache`, `seed` (curated
+  dataset), or `none` (not found / upstream blocked).
+- **UI:** searching a registration number offers a "Look up on MahaRERA" action;
+  the project page (`/project/:rera`) shows a live view for unknown numbers.
+- **Honesty:** fields the registry doesn't publish are shown as
+  "Not disclosed on MahaRERA" — no values are fabricated.
+
+### Making it work in production
+
+The MahaRERA portal blocks datacenter/bot traffic (HTTP 403 + captcha), so a
+direct fetch from a serverless host will often be blocked. Route requests
+through a scraping proxy by setting `MAHARERA_PROXY_URL` (ScraperAPI /
+ScrapingBee / BrightData / Zyte — anything that takes a target URL and returns
+the page). See [`.env.example`](./.env.example) for all options.
+
+When the upstream is blocked and no proxy is configured, the lookup degrades
+gracefully: the API returns `provenance: "none"` with a note explaining how to
+enable the proxy, and the page shows a "couldn't load" state rather than fake
+data.
+
+> **Note:** the HTML parser (`src/lib/maharera/parse.ts`) is unit-tested against
+> representative markup (`npm run test:parser`) but the exact live field labels
+> should be confirmed once against the real portal from an unblocked network /
+> proxy, since MahaRERA's markup varies by registration vintage.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

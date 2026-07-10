@@ -8,8 +8,12 @@ import {
   HardHat,
   ArrowRight,
   CornerDownLeft,
+  Radio,
 } from "lucide-react";
 import { searchAll, type SearchResult, slugForResult } from "@/lib/search";
+// Pure helpers only — importing from the lib index would pull server-only
+// lookup code (fetch/data) into the client bundle.
+import { looksLikeReraQuery, normalizeRera } from "@/lib/maharera/rera-number";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatINR, cn } from "@/lib/utils";
 
@@ -33,6 +37,18 @@ export function SearchBox({
     () => (q.trim() ? searchAll(q).slice(0, 7) : []),
     [q]
   );
+
+  // Offer a live MahaRERA lookup when the query looks like a registration
+  // number that isn't already an exact match in the curated dataset.
+  const normalizedRera = normalizeRera(q);
+  const hasExactProject = results.some(
+    (r) => r.kind === "project" && r.item.rera.toUpperCase() === normalizedRera
+  );
+  const offerLive = looksLikeReraQuery(q) && !hasExactProject;
+  const goLive = () => {
+    router.push(`/project/${normalizedRera}`);
+    setOpen(false);
+  };
 
   // Rotating placeholder examples
   React.useEffect(() => {
@@ -67,6 +83,8 @@ export function SearchBox({
   const submit = () => {
     if (results.length > 0) {
       go(results[active] ?? results[0]);
+    } else if (offerLive) {
+      goLive();
     } else if (q.trim()) {
       router.push(`/search?q=${encodeURIComponent(q.trim())}`);
     }
@@ -128,11 +146,37 @@ export function SearchBox({
       {open && q.trim() && (
         <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-[rgba(11,11,19,0.98)] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-scale-in">
           {results.length === 0 ? (
-            <div className="px-5 py-6 text-center text-sm text-[var(--fg-muted)]">
-              No matches for{" "}
-              <span className="text-white">&ldquo;{q}&rdquo;</span>. Press Enter
-              to browse all projects.
-            </div>
+            offerLive ? (
+              <div className="p-2">
+                <button
+                  onClick={goLive}
+                  className="flex w-full items-center gap-3 rounded-xl bg-[var(--green)]/[0.08] px-3 py-3 text-left hover:bg-[var(--green)]/[0.14]"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--green)]/15 text-[var(--green)]">
+                    <Radio size={16} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-white">
+                      Look up{" "}
+                      <span className="font-mono text-[var(--green)]">
+                        {normalizedRera}
+                      </span>{" "}
+                      on MahaRERA
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-[var(--fg-muted)]">
+                      Live registry lookup · not in the curated set
+                    </span>
+                  </span>
+                  <ArrowRight size={15} className="shrink-0 text-[var(--green)]" />
+                </button>
+              </div>
+            ) : (
+              <div className="px-5 py-6 text-center text-sm text-[var(--fg-muted)]">
+                No matches for{" "}
+                <span className="text-white">&ldquo;{q}&rdquo;</span>. Press Enter
+                to browse all projects.
+              </div>
+            )
           ) : (
             <ul className="max-h-[380px] overflow-y-auto py-2">
               {results.map((r, i) => (
@@ -194,6 +238,22 @@ export function SearchBox({
                   </button>
                 </li>
               ))}
+              {offerLive && (
+                <li className="mt-1 border-t border-white/[0.06] px-2 pt-2">
+                  <button
+                    onClick={goLive}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] font-medium text-[var(--green)] hover:bg-[var(--green)]/[0.1]"
+                  >
+                    <Radio size={14} className="shrink-0" />
+                    <span className="truncate">
+                      Look up{" "}
+                      <span className="font-mono">{normalizedRera}</span> live on
+                      MahaRERA
+                    </span>
+                    <ArrowRight size={14} className="ml-auto shrink-0" />
+                  </button>
+                </li>
+              )}
               <li className="mt-1 border-t border-white/[0.06] px-3 pt-2">
                 <button
                   onClick={() =>
