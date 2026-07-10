@@ -9,7 +9,6 @@ import {
   getInvestColor,
   getSafetyColor,
   getAqiColor,
-  getAqiLabel,
   getFloodColor,
   formatPrice,
 } from "@/data/mumbai";
